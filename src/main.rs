@@ -3,6 +3,7 @@ mod app;
 mod ui;
 mod metadata;
 mod player;
+mod explorer;
 use crate::crossterm_backend::run;
 use std::error::Error;
 

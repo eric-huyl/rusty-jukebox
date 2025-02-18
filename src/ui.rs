@@ -13,10 +13,10 @@ use tui::{
     Frame,
 };
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)].as_ref())
         .split(f.size());
     let titles = app
         .tabs
@@ -31,13 +31,32 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     f.render_widget(tabs, chunks[0]);
     match app.tabs.tab_index {
         0 => draw_playlist(f, chunks[1], app),
-        1 => draw_turntable(f, chunks[1], app),
-        2 => draw_explorer(f, chunks[1], app),
+        1 => draw_explorer(f, chunks[1], app),
+        2 => draw_turntable(f, chunks[1], app),
         _ => {}
     }
+
+    let notification = vec![
+        Spans::from(vec![
+            Span::styled("Title: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw(app.message.clone()),
+        ]),
+    ];
+
+    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+        "Notification",
+        Style::default()
+            .fg(Color::Magenta)
+            .add_modifier(Modifier::BOLD),
+    ));
+    let notification_view = Paragraph::new(notification)
+        .block(block)
+        .wrap(Wrap { trim: true });
+
+    f.render_widget(notification_view, chunks[2]);
 }
 
-fn draw_playlist<B>(f: &mut Frame<B>, area: Rect, app: &mut App)
+fn draw_playlist<B>(f: &mut Frame<B>, area: Rect, app: &App)
 where
     B: Backend,
 {
@@ -51,7 +70,7 @@ where
         .iter()
         .enumerate()
         .map(|(i, record)| {
-            let style = if app.playlist.current_index == i {
+            let style = if app.playlist.selected_index == i {
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD)
@@ -94,7 +113,7 @@ where
     f.render_widget(paragraph, chunks[1]);
 }
 
-fn draw_turntable<B>(f: &mut Frame<B>, area: Rect, app: &mut App)
+fn draw_turntable<B>(f: &mut Frame<B>, area: Rect, app: &App)
 where
     B: Backend,
 {
@@ -125,8 +144,32 @@ where
     f.render_widget(chart, area);
 }
 
-fn draw_explorer<B>(f: &mut Frame<B>, area: Rect, app: &mut App)
+fn draw_explorer<B>(f: &mut Frame<B>, area: Rect, app: &App)
 where
     B: Backend,
 {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(62), Constraint::Percentage(38)].as_ref())
+        .split(area);
+    let entries: Vec<ListItem> = app.explorer.display_entries().iter().enumerate().map(
+        |(i, entry)| {
+            let style = if app.explorer.selected_index == i {
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Spans::from(vec![Span::styled(entry.clone(), style)]))
+        },
+    ).collect();
+    let max_visible_items = chunks[0].height as usize - 2; // Subtracting 2 for borders
+    let start = app.explorer.selected_index.saturating_sub(max_visible_items / 2);
+    let end = start + max_visible_items;
+    let visible_entries = &entries[start..end.min(entries.len())];
+    let list_view = List::new(visible_entries)
+                .block(Block::default().borders(Borders::ALL).title("Files"))
+                .highlight_style(Style::default().bg(Color::Blue));
+    f.render_widget(list_view, chunks[0]);
 }

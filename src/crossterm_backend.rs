@@ -37,8 +37,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 fn run_app_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut app: App) -> io::Result<()> {
     let mut last_tick = Instant::now(); 
     loop {
-        terminal.draw(|f| draw(f, &mut app))?;
-        let timeout = Duration::from_millis(1000 / 60);
+        terminal.draw(|f| draw(f, &app))?;
+        let timeout = Duration::from_millis(500);
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
@@ -47,7 +47,8 @@ fn run_app_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut app: 
                     KeyCode::Right => app.on_right(),
                     KeyCode::Down => app.on_down(),
                     KeyCode::Up => app.on_up(),
-                    KeyCode::Char('p') => app.play(),
+                    KeyCode::Enter => app.play(),
+                    KeyCode::Char('p') => app.toggle(),
                     _ => {}
                 }
             }

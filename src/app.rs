@@ -1,6 +1,7 @@
 use std::str;
 use crate::metadata::read_metadata;
-use crate::player::play_music;
+use crate::player::Player;
+use crate::explorer::Explorer;
 use std::thread;
 
 pub struct TabState<'a> {
@@ -9,9 +10,9 @@ pub struct TabState<'a> {
 }
 
 impl<'a> TabState<'a> {
-    pub fn new(titles: Vec<&'a str>) -> TabState<'a> {
+    pub fn new() -> Self {
         TabState {
-            titles,
+            titles: vec!["Playlist", "Explorer", "Tab3"],
             tab_index: 0,
         }
     }
@@ -42,14 +43,14 @@ impl<'a> Record<'a> {
 }
 pub struct Playlist<'a> {
     pub records: Vec<Record<'a>>,
-    pub current_index: usize,
+    pub selected_index: usize,
 }
 
 impl<'a> Playlist<'a> {
     pub fn new() -> Playlist<'a> {
         Playlist {
             records: vec![Record::new("leiqiao.mp3"), Record::new("audio2.wav")],
-            current_index: 0,
+            selected_index: 0,
         }
     }
 
@@ -59,20 +60,20 @@ impl<'a> Playlist<'a> {
 
 
     pub fn next(&mut self) {
-        self.current_index = (self.current_index + 1) % self.records.len();
+        self.selected_index = (self.selected_index + 1) % self.records.len();
     }
 
     pub fn previous(&mut self) {
-        if self.current_index > 0 {
-            self.current_index -= 1;
+        if self.selected_index > 0 {
+            self.selected_index -= 1;
         } else {
-            self.current_index = self.records.len() - 1;
+            self.selected_index = self.records.len() - 1;
         }
     }
 
 
     pub fn current(&self) -> Option<&Record<'a>> {
-        self.records.get(self.current_index)
+        self.records.get(self.selected_index)
     }
 }
 
@@ -81,17 +82,21 @@ pub struct App<'a> {
     pub tabs: TabState<'a>,
     pub should_quit: bool,
     pub playlist: Playlist<'a>,
-    pub selected: usize,
+    pub message: String,
+    pub player: Player,
+    pub explorer: Explorer,
 }
 
 impl<'a> App<'a> {
     pub fn new(title:  &'a str)->App<'a> {
         App {
             title,
-            tabs: TabState::new(vec!["Tab1", "Tab2", "Tab3"]),
+            tabs: TabState::new(),
             should_quit: false,
             playlist: Playlist::new(),
-            selected: 0,
+            message: "Welcome to Rust Music Player!".to_string(),
+            player: Player::new(),
+            explorer: Explorer::new(),
         }
     }
 
@@ -104,14 +109,49 @@ impl<'a> App<'a> {
     }
 
     pub fn on_up(&mut self) {
-        if self.playlist.current_index > 0 {
-            self.playlist.current_index -= 1;
+
+        if self.tabs.tab_index==0{
+            if self.playlist.selected_index > 0 {
+                self.playlist.selected_index -= 1;
+            }
         }
+        else if self.tabs.tab_index==1{
+            if self.explorer.selected_index > 0 {
+                self.explorer.selected_index -= 1;
+            }
+        }
+        
+    }
+
+    pub fn handle_char_i(&mut self) {
+        // let file_path = self.explorer.entries[self.explorer.selected_index].path().to_str().unwrap();
+        // if file_path.ends_with(".mp3") || file_path.ends_with(".wav") {
+        //     self.insert_file_to_playlist(file_path);
+        // }
+        // else {
+        //     self.message = "Invalid file format to play".to_string();  
+        // }
+        // self.insert_file_to_playlist(file_path);
+    }
+
+
+    fn insert_file_to_playlist(&mut self, file_path: &'a str) {
+        let record = Record::new(file_path);
+        self.playlist.add_record(record);
     }
 
     pub fn on_down(&mut self) {
-        if self.playlist.current_index < self.playlist.records.len() - 1 {
-            self.playlist.current_index += 1;
+        
+
+        if self.tabs.tab_index==0{
+            if self.playlist.selected_index < self.playlist.records.len() - 1 {
+                self.playlist.selected_index += 1;
+            }
+        }
+        else if self.tabs.tab_index==1{
+            if self.explorer.selected_index < self.explorer.entries_len() - 1 {
+                self.explorer.selected_index += 1;
+            }
         }
     }
 
@@ -119,12 +159,21 @@ impl<'a> App<'a> {
         self.should_quit = true;
     }
 
-    pub fn play(&self) {
-        if let Some(record) = self.playlist.records.get(self.playlist.current_index) {
+    pub fn play(&mut self) {
+        if let Some(record) = self.playlist.records.get(self.playlist.selected_index) {
             let file_path = record.file_path.to_string();
-            thread::spawn(move || {
-                play_music(&file_path);
-            });
+            self.message = self.player.play_next(&file_path);
+        }
+    }
+
+    pub fn toggle(&mut self) {
+        if !self.player.is_paused() {
+            self.player.pause();
+            self.message = "Paused".to_string();
+        }
+        else {
+            self.player.resume();
+            self.message = "Resumed".to_string();
         }
     }
 
