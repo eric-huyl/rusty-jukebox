@@ -2,7 +2,6 @@ use std::str;
 use crate::metadata::read_metadata;
 use crate::player::Player;
 use crate::explorer::Explorer;
-use std::thread;
 
 pub struct TabState<'a> {
     pub titles: Vec<&'a str>,
@@ -124,20 +123,34 @@ impl<'a> App<'a> {
     }
 
     pub fn handle_char_i(&mut self) {
-        // let file_path = self.explorer.entries[self.explorer.selected_index].path().to_str().unwrap();
-        // if file_path.ends_with(".mp3") || file_path.ends_with(".wav") {
-        //     self.insert_file_to_playlist(file_path);
-        // }
-        // else {
-        //     self.message = "Invalid file format to play".to_string();  
-        // }
-        // self.insert_file_to_playlist(file_path);
+        let file_path = self.explorer.get_selected_path().to_owned().to_str().unwrap();
+        if file_path.ends_with(".mp3") || file_path.ends_with(".wav") {
+            self.insert_file_to_playlist(file_path);
+        }
+        else {
+            self.message = "Invalid file format to play".to_string();  
+        }
     }
-
 
     fn insert_file_to_playlist(&mut self, file_path: &'a str) {
         let record = Record::new(file_path);
         self.playlist.add_record(record);
+    }
+
+
+    pub fn on_enter(&mut self) {
+        if self.tabs.tab_index==0{
+            self.play();
+        }
+        else if self.tabs.tab_index==1{
+            self.message = self.explorer.into_selected_dir();
+        }
+    }
+
+    pub fn on_backspace(&mut self) {
+        if self.tabs.tab_index==1 {
+            self.message = self.explorer.into_parent_dir();
+        }
     }
 
     pub fn on_down(&mut self) {
@@ -159,7 +172,7 @@ impl<'a> App<'a> {
         self.should_quit = true;
     }
 
-    pub fn play(&mut self) {
+    fn play(&mut self) {
         if let Some(record) = self.playlist.records.get(self.playlist.selected_index) {
             let file_path = record.file_path.to_string();
             self.message = self.player.play_next(&file_path);

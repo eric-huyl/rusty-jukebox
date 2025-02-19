@@ -47,8 +47,10 @@ fn run_app_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, mut app: 
                     KeyCode::Right => app.on_right(),
                     KeyCode::Down => app.on_down(),
                     KeyCode::Up => app.on_up(),
-                    KeyCode::Enter => app.play(),
+                    KeyCode::Enter => app.on_enter(),
+                    KeyCode::Backspace => app.on_backspace(),
                     KeyCode::Char('p') => app.toggle(),
+                    KeyCode::Char('i') => app.handle_char_i(),
                     _ => {}
                 }
             }

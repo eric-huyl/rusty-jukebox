@@ -54,9 +54,9 @@ use crate::app::{Record};
 
 
 pub fn read_metadata(file_path: &str) -> Result<Record, Box<dyn std::error::Error>> {
-    let title: &str = file_path;
-    let artist: &str = "unknown";
-    let album: &str = "unknown";
+    let title= file_path;
+    let artist = "unknown";
+    let album = "unknown";
     let duration: u32 = 42;
     Ok(Record {
         title,

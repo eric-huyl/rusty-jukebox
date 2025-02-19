@@ -7,7 +7,6 @@ use rodio::{Decoder, OutputStream, Sink};
 pub struct Player {
     sink: Sink,
     _stream: OutputStream,
-    stream_handle: rodio::OutputStreamHandle,
 }
 
 impl Player {
@@ -17,7 +16,6 @@ impl Player {
         Player {
             sink,
             _stream,
-            stream_handle,
         }
     }
     

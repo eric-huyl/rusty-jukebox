@@ -152,7 +152,7 @@ where
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(62), Constraint::Percentage(38)].as_ref())
         .split(area);
-    let entries: Vec<ListItem> = app.explorer.display_entries().iter().enumerate().map(
+    let entries: Vec<ListItem> = app.explorer.get_entries_text().iter().enumerate().map(
         |(i, entry)| {
             let style = if app.explorer.selected_index == i {
                 Style::default()

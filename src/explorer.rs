@@ -1,7 +1,7 @@
 use std::env;
 use std::fs::{self, DirEntry};
-use std::io::{self, Write, stdout};
 use std::path::{Path, PathBuf};
+use std::io;
 
 
 
@@ -34,7 +34,36 @@ impl Explorer {
     }
 
 
-    pub fn display_entries(&self) -> Vec<String>{
+    pub fn into_selected_dir(&mut self) -> String {
+        let selected_path = self.get_selected_path();
+
+        if selected_path.is_dir() {
+            self.current_path = selected_path;
+            self.entries = Self::list_files_in_directory(&self.current_path).unwrap();
+            self.selected_index = 0;
+            ("Entered directory: ".to_string()+&self.current_path.to_string_lossy()).to_string()
+        } else {
+
+            ("You selected a file: ".to_string()+&selected_path.to_string_lossy()).to_string()
+        }
+    }
+
+    pub fn into_parent_dir(&mut self) -> String {
+        if let Some(parent) = self.current_path.parent() {
+            self.current_path = parent.to_path_buf();
+            self.entries = Self::list_files_in_directory(&self.current_path).unwrap();
+            self.selected_index = 0;
+            ("Entered directory: ".to_string()+&self.current_path.to_string_lossy()).to_string()
+        } else {
+            "You are already at the root directory.".to_string()
+        }
+    }
+        
+    pub fn get_selected_path(&self) -> PathBuf {
+        self.entries[self.selected_index].path().to_path_buf()
+    }
+
+    pub fn get_entries_text(&self) -> Vec<String>{
         self.entries.iter().enumerate().map(|(i, entry)|{
             let file_name = entry.file_name();
             let entry_name = file_name.to_string_lossy().into_owned();
