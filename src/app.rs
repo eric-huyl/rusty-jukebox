@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::str;
 use crate::metadata::read_metadata;
 use crate::player::Player;
@@ -122,8 +123,9 @@ impl<'a> App<'a> {
         
     }
 
-    pub fn handle_char_i(&mut self) {
-        let file_path = self.explorer.get_selected_path().to_owned().to_str().unwrap();
+    pub fn handle_char_i(&mut self) { 
+        let file_path_tmp = Box::new(self.explorer.get_selected_path().to_str().unwrap().to_string());
+        let file_path: &'static str = Box::leak(file_path_tmp);
         if file_path.ends_with(".mp3") || file_path.ends_with(".wav") {
             self.insert_file_to_playlist(file_path);
         }

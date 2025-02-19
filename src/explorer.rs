@@ -60,7 +60,7 @@ impl Explorer {
     }
         
     pub fn get_selected_path(&self) -> PathBuf {
-        self.entries[self.selected_index].path().to_path_buf()
+        self.entries[self.selected_index].path().to_path_buf().clone()
     }
 
     pub fn get_entries_text(&self) -> Vec<String>{
