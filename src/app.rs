@@ -147,6 +147,9 @@ impl<'a> App<'a> {
         else if self.tabs.tab_index==1{
             self.message = self.explorer.into_selected_dir();
         }
+        else {
+            
+        }
     }
 
     pub fn on_backspace(&mut self) {

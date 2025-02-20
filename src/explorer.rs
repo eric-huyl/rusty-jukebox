@@ -1,9 +1,7 @@
 use std::env;
 use std::fs::{self, DirEntry};
-use std::path::{Path, PathBuf};
 use std::io;
-
-
+use std::path::{Path, PathBuf};
 
 pub struct Explorer {
     current_path: PathBuf,
@@ -33,18 +31,23 @@ impl Explorer {
         Ok(entries)
     }
 
-
     pub fn into_selected_dir(&mut self) -> String {
         let selected_path = self.get_selected_path();
 
-        if selected_path.is_dir() {
-            self.current_path = selected_path;
-            self.entries = Self::list_files_in_directory(&self.current_path).unwrap();
-            self.selected_index = 0;
-            ("Entered directory: ".to_string()+&self.current_path.to_string_lossy()).to_string()
+        if !selected_path.is_dir() {
+            ("You selected a file: ".to_string() + &selected_path.to_string_lossy()).to_string()
         } else {
-
-            ("You selected a file: ".to_string()+&selected_path.to_string_lossy()).to_string()
+            let selected_entries = match Self::list_files_in_directory(&selected_path) {
+                Ok(entries) => entries,
+                Err(err) => {
+                    //println!("Error reading directory: {}", err);
+                    return format!("Error reading directory: {}", err);
+                }
+            };
+            self.current_path = selected_path;
+            self.entries = selected_entries;
+            self.selected_index = 0;
+            ("Entered directory: ".to_string() + &self.current_path.to_string_lossy()).to_string()
         }
     }
 
@@ -53,51 +56,50 @@ impl Explorer {
             self.current_path = parent.to_path_buf();
             self.entries = Self::list_files_in_directory(&self.current_path).unwrap();
             self.selected_index = 0;
-            ("Entered directory: ".to_string()+&self.current_path.to_string_lossy()).to_string()
+            ("Entered directory: ".to_string() + &self.current_path.to_string_lossy()).to_string()
         } else {
             "You are already at the root directory.".to_string()
         }
     }
-        
+
     pub fn get_selected_path(&self) -> PathBuf {
-        self.entries[self.selected_index].path().to_path_buf().clone()
+        self.entries[self.selected_index].path()
     }
 
-    pub fn get_entries_text(&self) -> Vec<String>{
-        self.entries.iter().enumerate().map(|(i, entry)|{
-            let file_name = entry.file_name();
-            let entry_name = file_name.to_string_lossy().into_owned();
-            let entry_type = if entry.file_type().unwrap().is_dir() {
-                "[DIR]".to_string()
-            } else {
-                "[FILE]".to_string()
-            };
-            entry_type + &entry_name
-        }).collect()
+    pub fn get_entries_text(&self) -> Vec<String> {
+        self.entries
+            .iter()
+            .enumerate()
+            .map(|(i, entry)| {
+                let file_name = entry.file_name();
+                let entry_name = file_name.to_string_lossy().into_owned();
+                let entry_type = if entry.file_type().unwrap().is_dir() {
+                    "[DIR]".to_string()
+                } else {
+                    "[FILE]".to_string()
+                };
+                entry_type + &entry_name
+            })
+            .collect()
     }
 }
 
-
-
-
-
-
 //  pub fn navigate_directory() -> io::Result<()> {
 //      let mut current_path = env::current_dir()?;
-//      
+//
 //      loop {
 //          println!("\nCurrent directory: {}", current_path.display());
-//  
+//
 //          // List files and directories
 //          let entries = list_files_in_directory(&current_path)?;
 //          display_files(&entries);
-//  
+//
 //          println!("\nEnter the number of the directory to enter (or 'back' to go up, 'exit' to quit): ");
-//          
+//
 //          let mut input = String::new();
 //          io::stdin().read_line(&mut input)?;
 //          let input = input.trim().to_lowercase();
-//  
+//
 //          if input == "exit" {
 //              break;
 //          } else if input == "back" {
@@ -110,7 +112,7 @@ impl Explorer {
 //              if choice > 0 && choice <= entries.len() {
 //                  let selected_entry = &entries[choice - 1];
 //                  let selected_path = selected_entry.path();
-//  
+//
 //                  if selected_path.is_dir() {
 //                      current_path = selected_path;
 //                  } else {
@@ -123,7 +125,7 @@ impl Explorer {
 //              println!("Invalid input. Please enter 'back', 'exit', or a number.");
 //          }
 //      }
-//  
+//
 //      Ok(())
 //  }
 
@@ -154,7 +156,7 @@ impl Explorer {
 //                  KeyCode::Enter => {
 //                      let selected_entry = &entries[selected_index];
 //                      let selected_path = selected_entry.path();
-//  
+//
 //                      if selected_path.is_dir() {
 //                          current_path = selected_path;
 //                          entries = list_files_in_directory(&current_path)?;
@@ -175,14 +177,14 @@ impl Explorer {
 //                  _ => {}
 //              }
 //          }
-//  
+//
 //          terminal.draw(|f| {
 //              let size = f.size();
 //              let chunks = Layout::default()
 //                  .direction(Direction::Vertical)
 //                  .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(1, 5), Constraint::Ratio(1, 5)].as_ref())
 //                  .split(size);
-//  
+//
 //              let items: Vec<ListItem> = entries
 //                  .iter()
 //                  .enumerate()
@@ -213,22 +215,22 @@ impl Explorer {
 //              let list = List::new(visible_items)
 //                  .block(Block::default().borders(Borders::ALL).title("Files"))
 //                  .highlight_style(Style::default().bg(Color::Blue));
-//  
+//
 //              f.render_widget(list, chunks[0]);
-//  
+//
 //              let instructions = Paragraph::new("Use arrow keys to navigate, Enter to select, Backspace to go up, 'q' to quit.")
 //                  .block(Block::default().borders(Borders::ALL).title("Instructions"));
 //              f.render_widget(instructions, chunks[1]);
-//  
+//
 //              let message = Paragraph::new(bottom_message.clone())
 //                  .block(Block::default().borders(Borders::ALL).title("Message"))
 //                  .style(Style::default().fg(Color::Yellow));
 //              f.render_widget(message, chunks[2]);
 //          })?;
-//  
-//          
+//
+//
 //      }
-//  
+//
 //      disable_raw_mode()?;
 //      terminal.clear()?;
 //      Ok(())
